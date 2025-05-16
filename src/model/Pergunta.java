@@ -17,12 +17,12 @@ public class Pergunta {
         this.idDificuldade = idDificuldade;
         this.criadaEm = criadaEm;
     }
-
-    //Construtor auxiliar
+    
+ //Construtor auxiliar
     public Pergunta(int id, String enunciado, int idCategoria, int idDificuldade) {
         this(id, enunciado, idCategoria, idDificuldade, null);
     }
-
+    
     //Getters e Setters
     public int getId() { return id; }
     public String getEnunciado() { return enunciado; }
@@ -41,6 +41,11 @@ public class Pergunta {
     public void setIdDificuldade(int idDificuldade) { this.idDificuldade = idDificuldade; }
     public void setCriadaEm(LocalDateTime criadaEm) { this.criadaEm = criadaEm; }
 
+    public String[] getAlternativas() {
+        if (respostas == null || respostas.size() != 4)
+            return new String[]{"A", "B", "C", "D"};
+        return respostas.stream().map(Resposta::getTextoResposta).toArray(String[]::new);
+    }
     public String toString() {
         return "Pergunta{" +
                 "id=" + id +
