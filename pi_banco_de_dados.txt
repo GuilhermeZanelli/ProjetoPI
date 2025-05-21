@@ -1,0 +1,194 @@
+CREATE DATABASE IF NOT EXISTS poliedro_sdm
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+USE poliedro_sdm;
+
+-- Usuário
+CREATE TABLE Usuario(
+    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    senha VARCHAR(255) NOT NULL,
+    tipo ENUM('aluno', 'professor', 'coordenador') NOT NULL,
+    data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    pontuacao INT DEFAULT 0,
+    ajudaDisponivel BOOLEAN DEFAULT TRUE
+);
+
+-- Triggers para validar e padronizar o email
+DELIMITER //
+CREATE TRIGGER trg_email_lowercase
+BEFORE INSERT ON Usuario
+FOR EACH ROW
+BEGIN
+    SET NEW.email = LOWER(NEW.email);
+    IF NEW.email NOT LIKE '%@sistemapoliedro.com.br' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Somente emails @sistemapoliedro.com.br são permitidos.';
+    END IF;
+END;
+//
+
+CREATE TRIGGER trg_email_lowercase_update
+BEFORE UPDATE ON Usuario
+FOR EACH ROW
+BEGIN
+    SET NEW.email = LOWER(NEW.email);
+    IF NEW.email NOT LIKE '%@sistemapoliedro.com.br' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Somente emails @sistemapoliedro.com.br são permitidos.';
+    END IF;
+END;
+//
+DELIMITER ;
+
+-- Hierarquia de usuário
+CREATE TABLE Coordenador(
+    id_usuario INT PRIMARY KEY,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE
+);
+
+CREATE TABLE Professor(
+    id_usuario INT PRIMARY KEY,
+    id_cadastrado_por INT NOT NULL,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE,
+    FOREIGN KEY (id_cadastrado_por) REFERENCES Coordenador(id_usuario) ON DELETE CASCADE
+);
+
+CREATE TABLE Aluno(
+    id_usuario INT PRIMARY KEY,
+    id_cadastrado_por INT NOT NULL,
+    serie VARCHAR(20) NOT NULL,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE,
+    FOREIGN KEY (id_cadastrado_por) REFERENCES Usuario(id_usuario) ON DELETE CASCADE
+);
+
+-- Estrutura de perguntas
+CREATE TABLE Categoria(
+    id_categoria INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE Pergunta(
+    id_pergunta INT AUTO_INCREMENT PRIMARY KEY,
+    enunciado TEXT NOT NULL,
+    id_categoria INT NOT NULL,
+    id_dificuldade INT NOT NULL,
+    criada_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_categoria) REFERENCES Categoria(id_categoria) ON DELETE CASCADE,
+    );
+
+CREATE TABLE Resposta(
+    id_resposta INT AUTO_INCREMENT PRIMARY KEY,
+    id_pergunta INT NOT NULL,
+    texto_resposta TEXT NOT NULL,
+    correta BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (id_pergunta) REFERENCES Pergunta(id_pergunta) ON DELETE CASCADE
+);
+
+CREATE TABLE Dificuldade (
+    id_dificuldade INT AUTO_INCREMENT PRIMARY KEY,
+    nivel VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- Ajuda, Prêmio e Feedback
+CREATE TABLE Ajuda (
+    id_usuario INT PRIMARY KEY,
+    disponivel BOOLEAN NOT NULL DEFAULT TRUE,
+    quantidade INT NOT NULL DEFAULT 3,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE
+);
+
+CREATE TABLE Premio (
+    id_usuario INT PRIMARY KEY,
+    valor DOUBLE NOT NULL,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE
+);
+
+CREATE TABLE Feedback (
+    id_pergunta INT PRIMARY KEY,
+    feedback TEXT,
+    FOREIGN KEY (id_pergunta) REFERENCES Pergunta(id_pergunta) ON DELETE CASCADE
+);
+
+-- Estatísticas e desempenho
+CREATE TABLE EstatisticaPergunta(
+    id_estatistica INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    id_pergunta INT NOT NULL,
+    acertou BOOLEAN NOT NULL,
+    tentativas INT DEFAULT 0,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE,
+    FOREIGN KEY (id_pergunta) REFERENCES Pergunta(id_pergunta) ON DELETE CASCADE
+);
+
+CREATE TABLE DesempenhoPorCategoria (
+    id_desempenho INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    id_categoria INT NOT NULL,
+    acertos INT DEFAULT 0,
+    erros INT DEFAULT 0,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE,
+    FOREIGN KEY (id_categoria) REFERENCES Categoria(id_categoria) ON DELETE CASCADE
+);
+
+CREATE TABLE Estatistica (
+    id_usuario INT PRIMARY KEY,
+    totalPerguntasRespondidas INT DEFAULT 0,
+    taxaAcerto FLOAT DEFAULT 0.0,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE
+);
+
+-- Ranking
+CREATE TABLE Ranking(
+    id_usuario INT PRIMARY KEY,
+    pontuacao INT DEFAULT 0,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE
+);
+
+CREATE VIEW Ranking_Restrito AS
+SELECT r.id_usuario, u.nome, r.pontuacao
+FROM Ranking r
+JOIN Usuario u ON r.id_usuario = u.id_usuario
+WHERE u.tipo IN ('professor', 'coordenador');
+
+-- Rodadas e jogo
+CREATE TABLE Rodada (
+    id_rodada INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    numero INT NOT NULL,
+    respostaUsuario TEXT,
+    respostaCerta TEXT,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE
+);
+
+CREATE TABLE Checkpoint (
+    id_checkpoint INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    rodadas INT,
+    valor DOUBLE,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE
+);
+
+-- Histórico de respostas
+CREATE TABLE HistoricoResposta (
+    id_usuario INT PRIMARY KEY,
+    respostasUsuario JSON,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE
+);
+
+-- Trilha sonora
+CREATE TABLE TrilhaSonora (
+    id_trilha INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    tipo VARCHAR(50) NOT NULL
+);
+
+-- Jogo
+CREATE TABLE Jogo (
+    id_jogo INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    id_trilha INT,
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE,
+    FOREIGN KEY (id_trilha) REFERENCES TrilhaSonora(id_trilha)
+);
