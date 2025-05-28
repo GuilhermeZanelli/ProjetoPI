@@ -18,9 +18,8 @@ public class TelaJogo extends javax.swing.JFrame {
 
 
     // Definir valores de pontuação baseados no Show do Milhão
-    private final int[] valores = {1000, 2000, 3000, 4000, 5000, 10000, 20000, 30000, 
-                        40000, 50000, 100000, 200000, 300000, 400000, 500000, 1000000};
     private String pontuacaoPrevia, pontuacaoProxima;
+    private String pontuacaoFinal;
     private String pontuacaoAtual = "R$: 0";
     // Controllers
     private PerguntaController perguntaController;
@@ -41,6 +40,10 @@ public class TelaJogo extends javax.swing.JFrame {
         initComponents();
         inicializarControllers();
         carregarPrimeiraQuestao();
+    }
+
+    public String getPontuacaoFinal(){
+        return pontuacaoFinal;
     }
     
     private void inicializarControllers() {
@@ -241,8 +244,9 @@ public class TelaJogo extends javax.swing.JFrame {
                 nivelAtual++;
                 
                 if (nivelAtual > 16) { // Assumindo 16 níveis como no Show do Milhão
-                    JOptionPane.showMessageDialog(this, "PARABÉNS! VOCÊ GANHOU O MILHÃO!\nR$ 1.000.000,00");
-                    TelaFimDoJogoVitoria telaFim = new TelaFimDoJogoVitoria();
+                    pontuacaoFinal = pontuacaoAtual;
+                    JOptionPane.showMessageDialog(this, "PARABÉNS! VOCÊ GANHOU O MILHÃO!");
+                    TelaFimDoJogoVitoria telaFim = new TelaFimDoJogoVitoria("R$: 1.000.000");
                     telaFim.setVisible(true);
                     this.dispose();
                     return;
@@ -255,11 +259,11 @@ public class TelaJogo extends javax.swing.JFrame {
                 
             } else {
                 // Resposta incorreta
+                pontuacaoFinal = pontuacaoPrevia;
                 JOptionPane.showMessageDialog(this, "Resposta incorreta!");
-                JOptionPane.showMessageDialog(this, "Você perdeu! Sua pontuação final é: R$ " + pontuacaoAtual);                
                 // Mostrar a resposta correta
                 JOptionPane.showMessageDialog(this, "A resposta correta era: " + respostaCorreta.getTextoResposta());
-                TelaFimDoJogoVitoria telaFim = new TelaFimDoJogoVitoria();
+                TelaFimDoJogoVitoria telaFim = new TelaFimDoJogoVitoria(pontuacaoFinal);
                 telaFim.setVisible(true);
                 this.dispose();
             }
@@ -292,7 +296,7 @@ public class TelaJogo extends javax.swing.JFrame {
     private void pararJogo() {
         JOptionPane.showMessageDialog(this, "Você decidiu parar o jogo.\n" +
                 "Sua pontuação final é: R$ " + pontuacaoAtual);
-        // Opcional: desabilitar botões, encerrar jogo, etc.
+        // Adicionar pontuação no banco de dados para fazer o ranking no futuro
     }
 
     
