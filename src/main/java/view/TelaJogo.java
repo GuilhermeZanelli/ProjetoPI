@@ -47,13 +47,11 @@ public class TelaJogo extends javax.swing.JFrame {
     }
     
     private void inicializarControllers() {
-        // Você precisará injetar os DAOs conforme sua implementação
-        // Exemplo assumindo que você tem uma factory ou singleton para DAOs:
         try {
-            PerguntaDAO perguntaDAO = new PerguntaDAO(); // ou DAOFactory.getPerguntaDAO();
-            FeedbackDAO feedbackDAO = new FeedbackDAO(); // ou DAOFactory.getFeedbackDAO();
-            RespostaDAO respostaDAO = new RespostaDAO(); // ou DAOFactory.getRespostaDAO();
-            AjudaDAO dicaDAO = new AjudaDAO(); // ou DAOFactory.getDicaDAO();
+            PerguntaDAO perguntaDAO = new PerguntaDAO(); 
+            FeedbackDAO feedbackDAO = new FeedbackDAO(); 
+            RespostaDAO respostaDAO = new RespostaDAO(); 
+            AjudaDAO dicaDAO = new AjudaDAO(); 
             
             this.perguntaController = new PerguntaController(perguntaDAO, feedbackDAO);
             this.respostaController = new RespostaController(respostaDAO);
@@ -69,10 +67,10 @@ public class TelaJogo extends javax.swing.JFrame {
     }
         private void carregarQuestao(int nivel) {
         try {
-            // Buscar pergunta do nível especificado
+            // Buscar pergunta baseada no nível atual
             perguntaAtual = perguntaController.buscarPerguntaPorNivel(nivel);
             
-            //mensagem de erro se não houver pergunta
+            // Mensagem de erro se não houver pergunta
             if (perguntaAtual == null) {
                 JOptionPane.showMessageDialog(this, "Não há mais perguntas disponíveis!");
                 return;
