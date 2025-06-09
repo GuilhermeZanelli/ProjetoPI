@@ -17,7 +17,7 @@ import javax.swing.JOptionPane;
 public class TelaJogo extends javax.swing.JFrame {
 
 
-    // Definir valores de pontuação baseados no Show do Milhão
+    // Definir valores de pontuação 
     private String pontuacaoPrevia, pontuacaoProxima;
     private String pontuacaoFinal;
     private String pontuacaoAtual = "R$: 0";
@@ -32,8 +32,8 @@ public class TelaJogo extends javax.swing.JFrame {
     private Resposta respostaCorreta;
     private int nivelAtual = 1; // Começar no nível 1
     
-    // Mapeamento dos botões para índices das respostas
-    private int[] indiceResposta = new int[5]; // Para mapear qual resposta está em cada botão
+    // Dados das respostas
+    private int[] indiceResposta = new int[5]; // alt 5 sempre correta
 
 
     public TelaJogo() {
@@ -72,6 +72,7 @@ public class TelaJogo extends javax.swing.JFrame {
             // Buscar pergunta do nível especificado
             perguntaAtual = perguntaController.buscarPerguntaPorNivel(nivel);
             
+            //mensagem de erro se não houver pergunta
             if (perguntaAtual == null) {
                 JOptionPane.showMessageDialog(this, "Não há mais perguntas disponíveis!");
                 return;
@@ -80,6 +81,7 @@ public class TelaJogo extends javax.swing.JFrame {
             // Buscar respostas da pergunta
             respostasAtuais = respostaController.listarRespostasDaPergunta(perguntaAtual.getId());
             
+            // Verificar se a pergunta tem exatamente 5 respostas
             if (respostasAtuais.size() != 5) {
                 JOptionPane.showMessageDialog(this, "Erro: A pergunta deve ter exatamente 5 alternativas!");
                 return;
@@ -93,10 +95,9 @@ public class TelaJogo extends javax.swing.JFrame {
                 }
             }
             
-            // Embaralhar as respostas para randomizar a posição
+            // Embaralhar as alternativas
             Collections.shuffle(respostasAtuais);
             
-            // Exibir a questão na tela
             exibirQuestao();
             
         } catch (Exception e) {
@@ -110,19 +111,20 @@ public class TelaJogo extends javax.swing.JFrame {
         enunciadoLabel.setText("<html><div style='text-align: center;'>" + 
                               perguntaAtual.getEnunciado() + "</div></html>");
         
-        // Exibir as alternativas
+        // Colocar as alternativas em labels
         javax.swing.JLabel[] labels = {alternativa1Label, alternativa2Label, alternativa3Label, 
                                      alternativa4Label, alternativa5Label};
-        
+
+        // Colocar as alternativas nas labels
         for (int i = 0; i < 5; i++) {
             if (i < respostasAtuais.size()) {
-                Resposta resposta = respostasAtuais.get(i);
-                labels[i].setText("<html>" + resposta.getTextoResposta() + "</html>");
-                indiceResposta[i] = resposta.getId(); // Mapear o ID da resposta
+                Resposta resposta = respostasAtuais.get(i);      // RespostasAtuais já embaralhadas
+                labels[i].setText("<html>" + resposta.getTextoResposta() + "</html>"); // Definir o texto da label com a resposta
+                indiceResposta[i] = resposta.getId();            // Mapear o ID da resposta
             }
         }
         
-        // Atualizar informações de nível/pontuação
+        // Atualizar informações de pontuação
         atualizarInformacoesJogo();
     }
 
@@ -211,15 +213,14 @@ public class TelaJogo extends javax.swing.JFrame {
                 break;
             default: pontuacaoAtual = "Sem prêmio";
         }
-        // Atualizar labels de informação (assumindo que existem)
+
+        // Atualizar labels de pontuação
         atualizarLabelsDePontuacao();
-        // Você pode adicionar labels para mostrar nível e pontuação atual
-        this.setTitle("Show do Milhão - Nível " + nivelAtual + " - R$ " + pontuacaoAtual);
     }
     
     private void processarResposta(int botaoClicado) {
         try {
-            // Buscar a resposta selecionada
+            // Pega a resposta do usuário
             int idRespostaSelecionada = indiceResposta[botaoClicado];
             Resposta respostaSelecionada = null;
             
@@ -237,14 +238,14 @@ public class TelaJogo extends javax.swing.JFrame {
             
             // Verificar se a resposta está correta
             if (respostaSelecionada.isCorreta()) {
-                // Resposta correta
                 JOptionPane.showMessageDialog(this, "Parabéns! Resposta correta!");
                 
                 // Avançar para próximo nível
                 nivelAtual++;
                 
-                if (nivelAtual > 16) { // Assumindo 16 níveis como no Show do Milhão
-                    pontuacaoFinal = pontuacaoAtual;
+                // Se passar do nível 16 (nível máximo)
+                if (nivelAtual > 16) {
+                    pontuacaoFinal = pontuacaoAtual;  // 1 milhão
                     JOptionPane.showMessageDialog(this, "PARABÉNS! VOCÊ GANHOU O MILHÃO!");
                     TelaFimDoJogoVitoria telaFim = new TelaFimDoJogoVitoria("R$: 1.000.000");
                     telaFim.setVisible(true);
@@ -259,7 +260,7 @@ public class TelaJogo extends javax.swing.JFrame {
                 
             } else {
                 // Resposta incorreta
-                pontuacaoFinal = pontuacaoPrevia;
+                pontuacaoFinal = pontuacaoPrevia;  // Pega o prêmio do checkpoint
                 JOptionPane.showMessageDialog(this, "Resposta incorreta!");
                 // Mostrar a resposta correta
                 JOptionPane.showMessageDialog(this, "A resposta correta era: " + respostaCorreta.getTextoResposta());
@@ -275,13 +276,13 @@ public class TelaJogo extends javax.swing.JFrame {
     }   
 
     private void atualizarLabelsDePontuacao() {
-        // Parar: mostra a pontuação atual (nível atual - 1)
+        // Parar: mostra a pontuação atual
         pararLabel.setText(pontuacaoAtual);
 
-        // Errar: mostra o prêmio anterior (nívelAtual - 2), ou zero se for a primeira rodada
+        // Errar: mostra o prêmio do checkpoint, ou zero, se for a primeira rodada
         errarLabel.setText(pontuacaoPrevia);
 
-        // Acertar: mostra o prêmio da próxima rodada, se houver
+        // Acertar: mostra o prêmio da próxima rodada (caso ele acerte)
         acertarLabel.setText(pontuacaoProxima);
     }
 
@@ -296,7 +297,6 @@ public class TelaJogo extends javax.swing.JFrame {
     private void pararJogo() {
         JOptionPane.showMessageDialog(this, "Você decidiu parar o jogo.\n" +
                 "Sua pontuação final é: " + pontuacaoAtual);
-        // Adicionar pontuação no banco de dados para fazer o ranking no futuro
     }
 
     
